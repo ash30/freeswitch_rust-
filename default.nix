@@ -4,41 +4,28 @@
        # Why does this break?
       (import (fetchTarball "https://github.com/oxalica/rust-overlay/archive/2e7ccf572ce0f0547d4cf4426de4482936882d0e.tar.gz"))
     ];
-
-    config.replaceStdenv = { pkgs }: pkgs.stdenv.override {
-      cc = pkgs.overrideCC pkgs.wrapCCWith {
-        cc = pkgs.gcc8.cc;
-        bintools = pkgs.wrapBintoolsWith {
-          bintools = pkgs.binutils-unwrapped;
-          libc = (import (builtins.fetchTarball { url = "https://github.com/nixos/nixpkgs/archive/6ed8a76ac64c88df0df3f01b536498983ad5ad23.tar.gz"; sha256 = "0ymc0g3adrnil4fbrirlhbpjlgpl77zrjbsfjs445ms3z3p7mb1d"; }) {}).glibc;
-        };
-      };
-    };
   } 
 }:
 let
-  glibc_2_18 = (import (builtins.fetchGit {
+  pkgs_old = (import (builtins.fetchGit {
       name = "glibc_2_18";
       url = "https://github.com/NixOS/nixpkgs/";
-      ref = "refs/heads/nixpkgs-unstable";
-      rev = "ab6453c483e406b07c63503bca5038838c187ecf";
-  }) { }).glibc;
+      ref = "refs/heads/nixos-19.09";
+      rev = "b79f64b5eb5fa8ca2f844ddb4d7c186b6c69a293";
+  }) { });
 
-  stdenv_old = pkgs.stdenv.override { 
-	cc = pkgs.overrideCC pkgs.stdenv (pkgs.wrapCCWith {
-	  cc = pkgs.gcc8.cc;
+    stdenv_old = (pkgs.overrideCC pkgs.stdenv (pkgs.wrapCCWith {
+	  cc = pkgs_old.gcc-unwrapped;
 	  bintools = pkgs.wrapBintoolsWith {
 	    bintools = pkgs.binutils-unwrapped;
-	    libc = glibc_2_18;
+	    libc = pkgs_old.glibc;
 	    };
-	});
-    };
-
+    }));
 
   rustPlatform = pkgs.makeRustPlatform {
     rustc = pkgs.rust-bin.stable.latest.default;
     cargo = pkgs.rust-bin.stable.latest.default;
-    stdenv =  stdenv_old;
+    stdenv = stdenv_old;
   };
   fs =  (pkgs.buildPackages.callPackage ./freeswitch { });
 in
@@ -50,9 +37,9 @@ rustPlatform.buildRustPackage rec {
     rustPlatform.bindgenHook
   ] ++ lib.optionals stdenv.isDarwin [
   ];
+
   NIX_CFLAGS_COMPILE="-isystem ${fs.out}/include/freeswitch";
 
   cargoLock.lockFile = ./Cargo.lock;
-
   src = pkgs.lib.cleanSource ./.;
 }
