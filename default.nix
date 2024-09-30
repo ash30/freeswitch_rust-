@@ -26,8 +26,14 @@ let
 	    };
     }));
 
+  patch = final: prev: {
+    libffi = prev.libffi.overrideAttrs {
+      doCheck = false;
+    };
+  };
+
   pkgs2 = import <nixpkgs> { 
-    overlays = [ (import (fetchTarball "https://github.com/oxalica/rust-overlay/archive/2e7ccf572ce0f0547d4cf4426de4482936882d0e.tar.gz")) ];
+    overlays = [ (import (fetchTarball "https://github.com/oxalica/rust-overlay/archive/2e7ccf572ce0f0547d4cf4426de4482936882d0e.tar.gz")) patch];
     config.replaceStdenv = { pkgs, ... }: stdenv_old;
   };
 
