@@ -46,18 +46,18 @@ let
     cargo = rustbin;
     stdenv = stdenv_old;
   };
-  #fs =  (pkgs.buildPackages.callPackage ./freeswitch { });
+  fs =  (pkgs.buildPackages.callPackage ./freeswitch { });
 in
 rustPlatform.buildRustPackage rec {  
   pname = "freeswitch_rs";
   version = "0.1";
   nativeBuildInputs = with pkgs; [ 
-    #fs
+    fs
     rustPlatform.bindgenHook
   ] ++ lib.optionals stdenv.isDarwin [
   ];
 
-  #NIX_CFLAGS_COMPILE="-isystem ${fs.out}/include/freeswitch";
+  NIX_CFLAGS_COMPILE="-isystem ${fs.out}/include/freeswitch";
 
   cargoLock.lockFile = ./Cargo.lock;
   src = pkgs.lib.cleanSource ./.;
